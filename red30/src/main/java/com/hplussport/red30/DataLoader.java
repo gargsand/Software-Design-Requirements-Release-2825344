@@ -14,14 +14,14 @@ import javax.servlet.http.HttpServlet;
 import com.hplussport.red30.beans.Nutrient;
 import com.hplussport.red30.beans.Product;
 
-
-/**DataLoader is load-on-startup servlet 
- * It uses Dao to connect to datasource defined in context.xml,
- * and reads all data into Dao's product and nutrient maps
+/**
+ * DataLoader is load-on-startup servlet It uses Dao to connect to datasource
+ * defined in context.xml, and reads all data into Dao's product and nutrient
+ * maps
  */
 @SuppressWarnings("serial")
-@WebServlet (urlPatterns = "/dataloader")
-public class DataLoader extends HttpServlet{
+@WebServlet(urlPatterns = "/dataloader")
+public class DataLoader extends HttpServlet {
 
 	private Dao dao;
 
@@ -39,7 +39,7 @@ public class DataLoader extends HttpServlet{
 	}
 
 	@Override
-	public void destroy()  {
+	public void destroy() {
 		Dao.nutrientMap = null;
 		Dao.productMap = null;
 		try {
@@ -50,11 +50,11 @@ public class DataLoader extends HttpServlet{
 		}
 	}
 
-	/**loadProducts() first reads data from food table 
-	 * to get fdc_id code and description. It creates Product objects and adds them 
-	 * into Dao's productMap. 
-	 * It then reads data from branded_food, and fills in rest of
-	 * Product's properties in the map.
+	/**
+	 * loadProducts() first reads data from food table to get fdc_id code and
+	 * description. It creates Product objects and adds them into Dao's productMap.
+	 * It then reads data from branded_food, and fills in rest of Product's
+	 * properties in the map.
 	 */
 	private void loadProducts() {
 		String query = "select fdc_id, description from food";
@@ -87,9 +87,9 @@ public class DataLoader extends HttpServlet{
 		}
 	}
 
-	/**loadNutrients() reads data from nutrient table, 
-	 * creates Nutrient objects with id, name, and unit_name, 
-	 * and then adds them to Dao's nutrientMap.
+	/**
+	 * loadNutrients() reads data from nutrient table, creates Nutrient objects with
+	 * id, name, and unit_name, and then adds them to Dao's nutrientMap.
 	 */
 	private void loadNutrients() {
 		String query = "select id, name, unit_name from nutrient";
@@ -98,54 +98,57 @@ public class DataLoader extends HttpServlet{
 			ps = dao.connection.prepareStatement(query);
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
-				Nutrient nutrient = new  Nutrient(rs.getString(1), rs.getString(2), rs.getString(3));
+				Nutrient nutrient = new Nutrient(rs.getString(1), rs.getString(2), rs.getString(3));
 				Dao.nutrientMap.put(rs.getString(1), nutrient);
-			} 
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 
-	/** loadProductNutrients() reads data from food_nutrient table 
-	 * and stores each row of data temporarily in a list of TempItems. 
-	 * Only those rows are stored where amount is not 0.
-	 * Then for each temp-item in list, it finds the food-product in products map, 
-	 * gets its productNutrientMap, and adds the nutrient and its amount in it.
+	/**
+	 * loadProductNutrients() reads data from food_nutrient table and stores each
+	 * row of data temporarily in a list of TempItems. Only those rows are stored
+	 * where amount is not 0. Then for each temp-item in list, it finds the
+	 * food-product in products map, gets its productNutrientMap, and adds the
+	 * nutrient and its amount in it.
 	 */
 	private void loadProductNutrients() {
 		PreparedStatement ps;
 		ResultSet rs;
 
-		//to store row data 
-		class TempItem{
+		// to store row data
+		class TempItem {
 			int fdc_id, nutrient_id;
 			float amount;
-			TempItem( int fdc_id, int nutrient_id, float amount) {
+
+			TempItem(int fdc_id, int nutrient_id, float amount) {
 				this.fdc_id = fdc_id;
 				this.nutrient_id = nutrient_id;
 				this.amount = amount;
 			}
 		}
-		List<TempItem> itemList = new ArrayList<>(); //will store all rows of data
+		List<TempItem> itemList = new ArrayList<>(); // will store all rows of data
 		try {
-			ps =  dao.connection.prepareStatement( "select fdc_id, nutrient_id, amount from food_nutrient where amount > 0");
+			ps = dao.connection
+					.prepareStatement("select fdc_id, nutrient_id, amount from food_nutrient where amount > 0");
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				itemList.add(new TempItem(rs.getInt(1), rs.getInt(2), rs.getFloat(3)));
 			}
-		}  catch (SQLException e) {
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
-		//use data in each item in itemList to update 
-		//the productNutrientMap for each product in productMap 
+		// use data in each item in itemList to update
+		// the productNutrientMap for each product in productMap
 		for (TempItem item : itemList) {
 			if (Dao.productMap.containsKey(Integer.toString(item.fdc_id))) {
 				Product product = Dao.productMap.get(Integer.toString(item.fdc_id));
 				if (product.getProductNutrientMap() == null) {
 					product.setProductNutrientMap();
 				}
-				product.getProductNutrientMap().put(Integer.toString(item.nutrient_id), (float)item.amount);
+				product.getProductNutrientMap().put(Integer.toString(item.nutrient_id), (float) item.amount);
 			}
 		}
 	}

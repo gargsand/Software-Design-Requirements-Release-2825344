@@ -10,12 +10,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @SuppressWarnings("serial")
-@WebServlet (urlPatterns = "/poc")
+@WebServlet(urlPatterns = "/poc")
 public class PocController extends HttpServlet {
-	       
-    public PocController() {
-        super();
-    }
+
+	public PocController() {
+		super();
+	}
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		RequestDispatcher rd = getServletContext().getRequestDispatcher("/jsp/poc/pocResults.jsp");
